@@ -1,117 +1,600 @@
 #include "raylib.h"
+#include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 #define LARGURA_JANELA 800
-#define ALTURA_JANELA  600
-#define TAM_CELULA     40   
-
+#define ALTURA_JANELA 600
+#define TAM_CELULA 40
+#define QUANTIDADE_INICIAL_BOLAS 12
+#define QUANTIDADE_MINIMA_BOLAS 1
 
 typedef struct {
     Vector2 pos;
     Vector2 vel;
-    float   raio;
-    Color   cor;
+    float raio;
+    Color cor;
 } Bola;
 
-int **criarMatriz(int linhas, int colunas) {
+int **criarMatriz(int linhas, int colunas)
+{
+    int **matriz;
 
-    int **matriz = (int **)malloc(linhas * sizeof(int *));
-    if (matriz == NULL) return NULL;
+    /* Aloca o vetor de ponteiros para as linhas */
+    matriz = (int **)malloc(linhas * sizeof(int *));
 
-    for (int i = 0; i < linhas; i++) {
+    if (matriz == NULL)
+    {
+        printf("Erro ao alocar a matriz!\n");
+        exit(1);
+    }
+
+    /* Aloca cada linha da matriz */
+    for (int i = 0; i < linhas; i++)
+    {
         matriz[i] = (int *)malloc(colunas * sizeof(int));
-        for (int j = 0; j < colunas; j++) {
-            // preenche com 0 ou 1 aleatoriamente (dois "tipos" de célula)
-            matriz[i][j] = GetRandomValue(0, 1);
+
+        if (matriz[i] == NULL)
+        {
+            printf("Erro ao alocar linha da matriz!\n");
+            exit(1);
+        }
+
+        /* Inicializa todas as celulas com 0 */
+        for (int j = 0; j < colunas; j++)
+        {
+            matriz[i][j] = 0;
         }
     }
+
     return matriz;
 }
 
-void liberarMatriz(int **matriz, int linhas) {
-    for (int i = 0; i < linhas; i++) {
-        free(matriz[i]); 
+
+/* função pra liberar a matriz */
+
+void liberarMatriz(int **matriz, int linhas)
+{
+    if (matriz == NULL)
+        return;
+
+    /* Libera cada linha */
+    for (int i = 0; i < linhas; i++)
+    {
+        free(matriz[i]);
     }
-    free(matriz);       
+
+    /* Libera o vetor de ponteiros */
+    free(matriz);
 }
 
-void desenharMatriz(int **matriz, int linhas, int colunas) {
-    for (int i = 0; i < linhas; i++) {
-        for (int j = 0; j < colunas; j++) {
-            Color cor = (matriz[i][j] == 1) ? (Color){20, 40, 70, 255}
-                                             : (Color){15, 30, 55, 255};
-            DrawRectangle(j * TAM_CELULA, i * TAM_CELULA,
-                           TAM_CELULA - 2, TAM_CELULA - 2, cor);
-        }
+
+/*iniciando as bolas*/
+
+void inicializarBola(Bola *b)
+{
+    /* Posicao inicial aleatoria */
+    b->pos = (Vector2)
+    {
+        GetRandomValue(30, LARGURA_JANELA - 30),
+        GetRandomValue(30, ALTURA_JANELA - 30)
+    };
+
+    /* Velocidade aleatoria */
+    b->vel = (Vector2)
+    {
+        (float)GetRandomValue(-4, 4),
+        (float)GetRandomValue(-4, 4)
+    };
+
+    /* Evita velocidade X igual a zero */
+    if (b->vel.x == 0)
+    {
+        b->vel.x = 2;
     }
+
+    /* Evita velocidade Y igual a zero */
+    if (b->vel.y == 0)
+    {
+        b->vel.y = 2;
+    }
+
+    /* Raio da bola */
+    b->raio = (float)GetRandomValue(10, 20);
+
+    /* Cor aleatoria */
+    b->cor = (Color)
+    {
+        GetRandomValue(50, 255),
+        GetRandomValue(50, 255),
+        GetRandomValue(50, 255),
+        255
+    };
 }
 
-Bola *criarBolas(int quantidade) {
-    Bola *bolas = (Bola *)malloc(quantidade * sizeof(Bola));
-    if (bolas == NULL) return NULL;
 
-    for (int i = 0; i < quantidade; i++) {
-        Bola *b = (bolas + i);
-        b->pos = (Vector2){ GetRandomValue(50, LARGURA_JANELA - 50),
-                             GetRandomValue(50, ALTURA_JANELA - 50) };
-        b->vel = (Vector2){ (float)GetRandomValue(-4, 4),
-                             (float)GetRandomValue(-4, 4) };
-        b->raio = (float)GetRandomValue(10, 25);
-        b->cor  = (Color){ GetRandomValue(100,255), GetRandomValue(100,255),
-                            GetRandomValue(100,255), 255 };
+/*Criar VETOR dinâmico  */
+
+Bola *criarBolas(int quantidade)
+{
+    Bola *bolas;
+
+    bolas = (Bola *)malloc(
+        quantidade * sizeof(Bola)
+    );
+
+    if (bolas == NULL)
+    {
+        printf("Erro ao alocar as bolas!\n");
+        exit(1);
     }
+
+    for (int i = 0; i < quantidade; i++)
+    {
+        /*
+           bolas + i equivale a &bolas[i]
+        */
+
+        Bola *b = bolas + i;
+
+        inicializarBola(b);
+    }
+
     return bolas;
 }
-void atualizarBola(Bola *b) {
+
+void atualizarBola(Bola *b)
+{
+    /* Atualiza a posicao */
+
     b->pos.x += b->vel.x;
     b->pos.y += b->vel.y;
 
-    // rebate nas bordas
-    if (b->pos.x - b->raio < 0 || b->pos.x + b->raio > LARGURA_JANELA)
+
+    /* Colisao com parede esquerda e direita */
+
+    if (b->pos.x - b->raio < 0)
+    {
+        b->pos.x = b->raio;
         b->vel.x *= -1;
-    if (b->pos.y - b->raio < 0 || b->pos.y + b->raio > ALTURA_JANELA)
+    }
+
+    if (b->pos.x + b->raio > LARGURA_JANELA)
+    {
+        b->pos.x = LARGURA_JANELA - b->raio;
+        b->vel.x *= -1;
+    }
+
+
+    /* Colisao com parede superior e inferior */
+
+    if (b->pos.y - b->raio < 0)
+    {
+        b->pos.y = b->raio;
         b->vel.y *= -1;
+    }
+
+    if (b->pos.y + b->raio > ALTURA_JANELA)
+    {
+        b->pos.y = ALTURA_JANELA - b->raio;
+        b->vel.y *= -1;
+    }
 }
 
-int main(void) {
-    srand((unsigned int)time(NULL));
 
-    InitWindow(LARGURA_JANELA, ALTURA_JANELA,
-               "Ponteiros e Alocacao Dinamica - raylib");
-    SetTargetFPS(60);
+/* EXERCICIO 2 */
 
-    int linhas   = ALTURA_JANELA / TAM_CELULA;
-    int colunas  = LARGURA_JANELA / TAM_CELULA;
-    int **grade  = criarMatriz(linhas, colunas);  
+void marcarCelulaVisitada(
+    Bola *b,
+    int **grade,
+    int linhas,
+    int colunas
+)
+{
+    /*
+       Converte a posicao da bola em pixels
+       para linha e coluna da matriz
+    */
 
-    int quantidadeBolas = 12;
-    Bola *bolas = criarBolas(quantidadeBolas);    
+    int coluna = (int)(b->pos.x / TAM_CELULA);
 
-    while (!WindowShouldClose()) {
-        for (int i = 0; i < quantidadeBolas; i++) {
-            atualizarBola(bolas + i);
+    int linha = (int)(b->pos.y / TAM_CELULA);
+
+
+    /*Verifica se os indices estao dentro dos limites da matriz*/
+
+    if (
+        linha >= 0 &&
+        linha < linhas &&
+        coluna >= 0 &&
+        coluna < colunas
+    )
+    {
+        /* Marca a celula como visitada */
+
+        grade[linha][coluna] = 1;
+    }
+}
+
+
+int contarCelulasVisitadas(
+    int **grade,
+    int linhas,
+    int colunas
+)
+{
+    int contador = 0;
+
+    for (int i = 0; i < linhas; i++)
+    {
+        for (int j = 0; j < colunas; j++)
+        {
+            if (grade[i][j] == 1)
+            {
+                contador++;
+            }
         }
+    }
 
-        BeginDrawing();
-            ClearBackground(RAYWHITE);
+    return contador;
+}
 
-            desenharMatriz(grade, linhas, colunas);
+void desenharMatriz(
+    int **grade,
+    int linhas,
+    int colunas
+)
+{
+    for (int i = 0; i < linhas; i++)
+    {
+        for (int j = 0; j < colunas; j++)
+        {
+            Color corCelula;
 
-            for (int i = 0; i < quantidadeBolas; i++) {
-                DrawCircleV(bolas[i].pos, bolas[i].raio, bolas[i].cor);
+            /*
+               0 = nao visitada
+               1 = visitada
+            */
+
+            if (grade[i][j] == 0)
+            {
+                corCelula = LIGHTGRAY;
+            }
+            else
+            {
+                corCelula = YELLOW;
             }
 
-            DrawText("Matriz (int**) e vetor de structs (Bola*) alocados com malloc",
-                     10, 10, 18, WHITE);
-            DrawText("Pressione ESC para sair", 10, ALTURA_JANELA - 25, 16, WHITE);
+
+            /* Desenha a celula */
+
+            DrawRectangle(
+                j * TAM_CELULA,
+                i * TAM_CELULA,
+                TAM_CELULA,
+                TAM_CELULA,
+                corCelula
+            );
+
+
+            /* Desenha a borda da celula */
+
+            DrawRectangleLines(
+                j * TAM_CELULA,
+                i * TAM_CELULA,
+                TAM_CELULA,
+                TAM_CELULA,
+                GRAY
+            );
+        }
+    }
+}
+
+
+int main(void)
+{
+    /* Quantidade de linhas e colunas */
+
+    int linhas = ALTURA_JANELA / TAM_CELULA;
+
+    int colunas = LARGURA_JANELA / TAM_CELULA;
+
+
+    /* Cria a matriz dinamica */
+
+    int **grade = criarMatriz(
+        linhas,
+        colunas
+    );
+
+
+    /* Quantidade inicial de bolas */
+
+    int quantidadeBolas =
+        QUANTIDADE_INICIAL_BOLAS;
+
+
+    /* Cria o vetor dinamico de bolas */
+
+    Bola *bolas = criarBolas(
+        quantidadeBolas
+    );
+
+
+    /* Inicializa a janela */
+
+    InitWindow(
+        LARGURA_JANELA,
+        ALTURA_JANELA,
+        "Alocacao Dinamica - Bolas e Mapa de Calor"
+    );
+
+
+    SetTargetFPS(60);
+    
+    while (!WindowShouldClose())
+    {
+
+        /*
+           EXERCICIO 1
+           ADICIONAR UMA NOVA BOLA
+           TECLA ESPACO */
+
+        if (IsKeyPressed(KEY_SPACE))
+        {
+            /*
+               Primeiro aumenta a quantidade
+            */
+
+            int novaQuantidade =
+                quantidadeBolas + 1;
+
+
+            /*
+               realloc redimensiona o bloco
+               de memoria das bolas
+            */
+
+            Bola *temp = (Bola *)realloc(
+                bolas,
+                novaQuantidade * sizeof(Bola)
+            );
+
+
+            /*
+               Verifica se realloc conseguiu
+               alocar a memoria
+            */
+
+            if (temp != NULL)
+            {
+                /*Atualiza o ponteiro original */
+
+                bolas = temp;
+
+
+                /* Atualiza a quantidade */
+
+                quantidadeBolas =
+                    novaQuantidade;
+
+
+                /*Inicializa a nova bola A ultima posicao e: quantidadeBolas - 1 */
+
+                inicializarBola(
+                    &bolas[
+                        quantidadeBolas - 1
+                    ]
+                );
+            }
+            else
+            {
+                printf(
+                    "Erro ao adicionar nova bola!\n"
+                );
+            }
+        }
+
+
+        /* EXERCICIO 1
+           REMOVER A ULTIMA BOLA
+           TECLA BACKSPACE */
+
+        if (IsKeyPressed(KEY_BACKSPACE))
+        {
+            /*
+               Verifica se existe mais que
+               a quantidade minima
+            */
+
+            if (
+                quantidadeBolas >
+                QUANTIDADE_MINIMA_BOLAS
+            )
+            {
+                int novaQuantidade =
+                    quantidadeBolas - 1;
+
+
+                /*
+                   Reduz o tamanho do vetor
+                */
+
+                Bola *temp = (Bola *)realloc(
+                    bolas,
+                    novaQuantidade * sizeof(Bola)
+                );
+
+
+                if (temp != NULL)
+                {
+                    bolas = temp;
+
+                    quantidadeBolas =
+                        novaQuantidade;
+                }
+                else
+                {
+                    printf(
+                        "Erro ao remover bola!\n"
+                    );
+                }
+            }
+        }
+
+
+        /* =================================================
+           ATUALIZAR TODAS AS BOLAS
+           ================================================= */
+
+        for (
+            int i = 0;
+            i < quantidadeBolas;
+            i++
+        )
+        {
+            /*
+               Atualiza a bola
+
+               bolas + i equivale a
+               &bolas[i]
+            */
+
+            atualizarBola(
+                bolas + i
+            );
+
+
+            /*
+               Marca a celula visitada
+               pela bola
+            */
+
+            marcarCelulaVisitada(
+                bolas + i,
+                grade,
+                linhas,
+                colunas
+            );
+        }
+
+        int celulasVisitadas =
+            contarCelulasVisitadas(
+                grade,
+                linhas,
+                colunas
+            );
+
+
+
+        BeginDrawing();
+
+
+        ClearBackground(RAYWHITE);
+
+
+        /* Desenha a matriz */
+
+        desenharMatriz(
+            grade,
+            linhas,
+            colunas
+        );
+
+
+        /* =================================================
+           DESENHAR TODAS AS BOLAS
+           ================================================= */
+
+        for (
+            int i = 0;
+            i < quantidadeBolas;
+            i++
+        )
+        {
+            DrawCircleV(
+                bolas[i].pos,
+                bolas[i].raio,
+                bolas[i].cor
+            );
+        }
+
+
+        /* =================================================
+           MOSTRAR INFORMACOES
+           ================================================= */
+
+        DrawRectangle(
+            10,
+            10,
+            300,
+            100,
+            Fade(WHITE, 0.85f)
+        );
+
+
+        DrawText(
+            TextFormat(
+                "Quantidade de bolas: %d",
+                quantidadeBolas
+            ),
+            20,
+            20,
+            20,
+            BLACK
+        );
+
+
+        DrawText(
+            TextFormat(
+                "Celulas visitadas: %d",
+                celulasVisitadas
+            ),
+            20,
+            50,
+            20,
+            BLACK
+        );
+
+
+        DrawText(
+            "ESPACO: adicionar bola",
+            20,
+            80,
+            15,
+            DARKGRAY
+        );
+
+
+        DrawText(
+            "BACKSPACE: remover bola",
+            20,
+            100,
+            15,
+            DARKGRAY
+        );
+
 
         EndDrawing();
     }
+    /*Libera o vetor dinamico de bola */
 
     free(bolas);
-    liberarMatriz(grade, linhas);
+
+
+    /*Libera a matriz dinamico*/
+
+    liberarMatriz(
+        grade,
+        linhas
+    );
+
+
+    /*
+       Fecha a janela
+    */
 
     CloseWindow();
+
+
     return 0;
 }
