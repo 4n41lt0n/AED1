@@ -19,7 +19,6 @@ int **criarMatriz(int linhas, int colunas)
 {
     int **matriz;
 
-    /* Aloca o vetor de ponteiros para as linhas */
     matriz = (int **)malloc(linhas * sizeof(int *));
 
     if (matriz == NULL)
@@ -28,7 +27,6 @@ int **criarMatriz(int linhas, int colunas)
         exit(1);
     }
 
-    /* Aloca cada linha da matriz */
     for (int i = 0; i < linhas; i++)
     {
         matriz[i] = (int *)malloc(colunas * sizeof(int));
@@ -39,7 +37,6 @@ int **criarMatriz(int linhas, int colunas)
             exit(1);
         }
 
-        /* Inicializa todas as celulas com 0 */
         for (int j = 0; j < colunas; j++)
         {
             matriz[i][j] = 0;
@@ -48,9 +45,6 @@ int **criarMatriz(int linhas, int colunas)
 
     return matriz;
 }
-
-
-/* função pra liberar a matriz */
 
 void liberarMatriz(int **matriz, int linhas)
 {
@@ -67,32 +61,25 @@ void liberarMatriz(int **matriz, int linhas)
     free(matriz);
 }
 
-
-/*iniciando as bolas*/
-
 void inicializarBola(Bola *b)
 {
-    /* Posicao inicial aleatoria */
     b->pos = (Vector2)
     {
         GetRandomValue(30, LARGURA_JANELA - 30),
         GetRandomValue(30, ALTURA_JANELA - 30)
     };
 
-    /* Velocidade aleatoria */
     b->vel = (Vector2)
     {
         (float)GetRandomValue(-4, 4),
         (float)GetRandomValue(-4, 4)
     };
 
-    /* Evita velocidade X igual a zero */
     if (b->vel.x == 0)
     {
         b->vel.x = 2;
     }
 
-    /* Evita velocidade Y igual a zero */
     if (b->vel.y == 0)
     {
         b->vel.y = 2;
@@ -110,9 +97,6 @@ void inicializarBola(Bola *b)
         255
     };
 }
-
-
-/*Criar VETOR dinâmico  */
 
 Bola *criarBolas(int quantidade)
 {
@@ -163,8 +147,6 @@ void atualizarBola(Bola *b)
         b->pos.x = LARGURA_JANELA - b->raio;
         b->vel.x *= -1;
     }
-
-
     /* Colisao com parede superior e inferior */
 
     if (b->pos.y - b->raio < 0)
@@ -190,16 +172,11 @@ void marcarCelulaVisitada(
     int colunas
 )
 {
-    /*
-       Converte a posicao da bola em pixels
-       para linha e coluna da matriz
-    */
+    /*Converte a posicao da bola em pixels para linha e coluna da matriz*/
 
     int coluna = (int)(b->pos.x / TAM_CELULA);
 
     int linha = (int)(b->pos.y / TAM_CELULA);
-
-
     /*Verifica se os indices estao dentro dos limites da matriz*/
 
     if (
@@ -209,7 +186,7 @@ void marcarCelulaVisitada(
         coluna < colunas
     )
     {
-        /* Marca a celula como visitada */
+/* Marca a celula como visitada */
 
         grade[linha][coluna] = 1;
     }
@@ -336,8 +313,7 @@ int main(void)
 
         /*
            EXERCICIO 1
-           ADICIONAR UMA NOVA BOLA
-           TECLA ESPACO */
+           ADICIONAR UMA NOVA BOLA TECLA ESPACO */
 
         if (IsKeyPressed(KEY_SPACE))
         {
@@ -442,9 +418,7 @@ int main(void)
         }
 
 
-        /* =================================================
-           ATUALIZAR TODAS AS BOLAS
-           ================================================= */
+        /* ATUALIZAR TODAS AS BOLAS */
 
         for (
             int i = 0;
@@ -501,9 +475,7 @@ int main(void)
         );
 
 
-        /* =================================================
-           DESENHAR TODAS AS BOLAS
-           ================================================= */
+        /* DESENHAR TODAS AS BOLAS */
 
         for (
             int i = 0;
@@ -519,9 +491,7 @@ int main(void)
         }
 
 
-        /* =================================================
-           MOSTRAR INFORMACOES
-           ================================================= */
+        /* MOSTRAR INFORMACOES*/
 
         DrawRectangle(
             10,
@@ -594,7 +564,6 @@ int main(void)
     */
 
     CloseWindow();
-
 
     return 0;
 }
