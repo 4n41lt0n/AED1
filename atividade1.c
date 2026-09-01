@@ -1,34 +1,10 @@
-/*
- * Ponteiros + Alocação Dinâmica (vetor e matriz) com raylib
- * ---------------------------------------------------------------
- * Este programa desenha:
- *   1) Uma matriz dinâmica (grade de células coloridas) alocada com malloc,
- *      onde cada linha é um ponteiro para um vetor de inteiros.
- *   2) Um um vetor dinâmico de bolinhas (struct Bola) que se movem na tela,
- *      manipuladas via ponteiros.
- *
- * Conceitos praticados:
- *   - malloc / free
- *   - ponteiro para ponteiro (int **) para representar matriz
- *   - vetor de structs alocado dinamicamente
- *   - passagem de ponteiros para funções (evita cópias, permite alterar
- *     o dado original)
- *   - aritmética de ponteiros ( *(p + i) é equivalente a p[i] )
- *
- * Compilar (Linux, com raylib instalada):
- *   gcc exemplo_ponteiros_raylib.c -o exemplo -lraylib -lm -lpthread -ldl -lrt -lX11
- *
- * Compilar (Windows, MinGW):
- *   gcc exemplo_ponteiros_raylib.c -o exemplo.exe -lraylib -lgdi32 -lwinmm
- */
-
 #include "raylib.h"
 #include <stdlib.h>
 #include <time.h>
 
 #define LARGURA_JANELA 800
 #define ALTURA_JANELA  600
-#define TAM_CELULA     40   // tamanho de cada célula da grade (matriz)
+#define TAM_CELULA     40   
 
 
 typedef struct {
@@ -38,19 +14,12 @@ typedef struct {
     Color   cor;
 } Bola;
 
-/* ---------------------------------------------------------------
- * cria uma MATRIZ dinâmica de inteiros (linhas x colunas)
- * Retorna um ponteiro para ponteiro (int **): cada posição do
- * vetor externo aponta para um vetor de inteiros (uma linha).
- * --------------------------------------------------------------- */
 int **criarMatriz(int linhas, int colunas) {
 
-    // aloca o vetor de ponteiros (um ponteiro por linha)
     int **matriz = (int **)malloc(linhas * sizeof(int *));
     if (matriz == NULL) return NULL;
 
     for (int i = 0; i < linhas; i++) {
-        // aloca cada linha como um vetor de inteiros
         matriz[i] = (int *)malloc(colunas * sizeof(int));
         for (int j = 0; j < colunas; j++) {
             // preenche com 0 ou 1 aleatoriamente (dois "tipos" de célula)
@@ -60,15 +29,13 @@ int **criarMatriz(int linhas, int colunas) {
     return matriz;
 }
 
-/* libera a memória da matriz: primeiro cada linha, depois o vetor de linhas */
 void liberarMatriz(int **matriz, int linhas) {
     for (int i = 0; i < linhas; i++) {
-        free(matriz[i]);   // libera cada linha
+        free(matriz[i]); 
     }
-    free(matriz);           // libera o vetor de ponteiros
+    free(matriz);       
 }
 
-/* desenha a matriz na tela, célula por célula */
 void desenharMatriz(int **matriz, int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -80,16 +47,11 @@ void desenharMatriz(int **matriz, int linhas, int colunas) {
     }
 }
 
-/* ---------------------------------------------------------------
- * cria o vetor dinâmico de bolas
- * --------------------------------------------------------------- */
 Bola *criarBolas(int quantidade) {
     Bola *bolas = (Bola *)malloc(quantidade * sizeof(Bola));
     if (bolas == NULL) return NULL;
 
     for (int i = 0; i < quantidade; i++) {
-        // usar (bolas + i) é o mesmo que &bolas[i]: aqui acessamos
-        // o campo via ponteiro para deixar explícito o conceito.
         Bola *b = (bolas + i);
         b->pos = (Vector2){ GetRandomValue(50, LARGURA_JANELA - 50),
                              GetRandomValue(50, ALTURA_JANELA - 50) };
@@ -101,9 +63,6 @@ Bola *criarBolas(int quantidade) {
     }
     return bolas;
 }
-
-/* atualiza a posição de UMA bola: recebe um PONTEIRO para a struct,
- * então as alterações afetam diretamente o vetor original (sem cópia) */
 void atualizarBola(Bola *b) {
     b->pos.x += b->vel.x;
     b->pos.y += b->vel.y;
@@ -124,15 +83,12 @@ int main(void) {
 
     int linhas   = ALTURA_JANELA / TAM_CELULA;
     int colunas  = LARGURA_JANELA / TAM_CELULA;
-    int **grade  = criarMatriz(linhas, colunas);   // matriz dinâmica
+    int **grade  = criarMatriz(linhas, colunas);  
 
     int quantidadeBolas = 12;
-    Bola *bolas = criarBolas(quantidadeBolas);      // vetor dinâmico
+    Bola *bolas = criarBolas(quantidadeBolas);    
 
     while (!WindowShouldClose()) {
-
-        // percorre o vetor usando aritmética de ponteiros:
-        // (bolas + i) aponta para o i-ésimo elemento do vetor
         for (int i = 0; i < quantidadeBolas; i++) {
             atualizarBola(bolas + i);
         }
@@ -153,7 +109,6 @@ int main(void) {
         EndDrawing();
     }
 
-    // libera TODA a memória alocada dinamicamente antes de encerrar
     free(bolas);
     liberarMatriz(grade, linhas);
 
